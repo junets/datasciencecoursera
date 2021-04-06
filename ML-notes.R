@@ -314,3 +314,263 @@ install.packages('rattle')
 library(rattle)
 fancyRpartPlot(modFit$finalModel)
 predict(modFit, mewdata = testing)
+
+# bootstrap aggregating (bagging)
+library(ElemStatLearn)
+data(ozone, package = 'ElemStatLearn')
+
+# random forests
+data("iris")
+library(ggplot2)
+inTrain <- createDataPartition(y = iris$Species, p = .7, list = F)
+training <- iris[inTrain,]
+testing <- iris[-inTrain,]
+modFit <- train(Species ~. , data = training, method ='rf', prox =T)
+modFit
+library(randomForest)
+getTree(modFit$finalModel, k =2)
+
+irisP <- classCenter(training[,c(3,4)], training$Species, modFit$finalModel$prox)
+irisP <- as.data.frame(irisP)
+irisP$Species <- rownames(irisP)
+p <- qplot(Petal.Width, Petal.Length, col = Species, data = training)
+p + geom_point(aes(x = Petal.Width, y = Petal.Length, col = Species), size = 5, shape = 4, data = irisP)
+
+pred <- predict(modFit, testing)
+testing$predRight <- pred == testing$Species
+table(pred, testing$Species)
+qplot(Petal.Width, Petal.Length, colour = predRight, data = testing, main = 'newdata Predictions')
+
+# Boosting ~ weight the weak predictors and add them up
+library(ISLR)
+data(Wage)
+library(ggplot2)
+library(caret)
+Wage <- subset(Wage, select = -c(logwage))
+inTrain <- createDataPartition(y = Wage$wage, p = .7, list = F)
+training <- Wage[inTrain,]
+testing <- Wage[inTrain,]
+modFit <- train(wage ~., method = 'gbm', data = training, verbose = F)
+print(modFit)
+qplot(predict(modFit, testing), wage, data = testing)
+
+# model based prediction
+inTrain <- createDataPartition(y = iris$Species, p = .7, list = F)
+training <- iris[inTrain,]
+testing <- iris[-inTrain,]
+dim(training)
+dim(testing)
+modlda = train(Species ~ ., data = training, method = 'lda')
+modnb = train(Species ~ . , data = training, method = 'nb')
+plda = predict(modlda, testing)
+pnb = predict(modnb, testing)
+table(plda, pnb)
+equalPrediction = (plda == pnb)
+qplot(Petal.Width, Sepal.Width, colour = equalPrediction, data = testing)
+
+# 3 - q1
+library(AppliedPredictiveModeling)
+data(segmentationOriginal)
+library(caret)
+
+packageDescription("AppliedPredictiveModeling")$Version
+packageDescription("caret")$Version
+packageDescription("ElemStatLearn")$Version
+packageDescription("pgmm")$Version
+
+table(segmentationOriginal$Case)
+training <- subset(segmentationOriginal, Case=="Train")
+testing <-  subset(segmentationOriginal, Case=="Test")
+## Classification and Regression Trees
+set.seed(125)
+modFit <- train(Class~., method="rpart", data=training[-c(1,2)])
+print(modFit$finalModel)
+library(rattle)
+fancyRpartPlot(modFit$finalModel)
+
+# q3
+library(pgmm)
+data(olive)
+olive = olive[,-1]
+newdata = as.data.frame(t(colMeans(olive)))
+modFit <- train(Area ~ ., method = "rpart", data = olive)
+print(modFit$finalModel)
+predict(modFit, newdata = newdata)
+fancyRpartPlot(modFit$finalModel)
+
+# q4
+suppressMessages(library(ElemStatLearn))
+library(ElemStatLearn)
+data(SAheart)
+set.seed(8484)
+train = sample(1:dim(SAheart)[1],size=dim(SAheart)[1]/2,replace=F)
+trainSA = SAheart[train,]
+testSA = SAheart[-train,]
+
+missClass = function(values,prediction){sum(((prediction > 0.5)*1) != values)/length(values)}
+
+# regularized regression
+
+# combining predictors
+library(ISLR)
+data(Wage)
+library(ggplot2)
+library(caret)
+Wage <- subset(Wage, select = -c(logwage))
+# create a building data set and validation set
+inBuild <- createDataPartition(y = Wage$wage, p =.7, list = F)
+validation <- Wage[-inBuild,]
+buildData <- Wage[inBuild,]
+
+inTrain <- createDataPartition(y = buildData$wage, p = .7, list = F)
+training <- buildData[inTrain,]
+testing <- buildData[-inTrain,]
+dim(training)
+dim(testing)
+dim(validation)
+
+mod1 <- train(wage ~. ,method = 'glm', data = training)
+mod2 <- train(wage ~. ,method = 'rf', data = training, trControl =trainControl(method = 'cv'), number = 3)
+pred1 <- predict(mod1, testing)
+pred2 <- predict(mod2, testing)
+qplot(pred1, pred2, colour = wage, data = testing)
+
+## fit model that combines predictors
+predDF <- data.frame(pred1, pred2, wage = testing$wage)
+combModFit <- train(wage ~. , method = 'gam', data = predDF)
+combPred <- predict(combModFit, predDF)
+
+## testing errors
+sqrt(sum((pred1 - testing$wage)^2))
+sqrt(sum((pred2 - testing$wage)^2))
+sqrt(sum((combPred - testing$wage)^2))
+
+## predict on validation data set
+pred1V <- predict(mod1, validation)
+pred2V <- predict(mod2, validation)
+predVDF <- data.frame(pred1 = pred1V, pred2 = pred2V)
+combPredV <- predict(combModFit, predVDF)
+
+## evaluate on validation
+sqrt(sum((pred1V - testing$wage)^2))
+sqrt(sum((pred2V - testing$wage)^2))
+sqrt(sum((combPredV - testing$wage)^2))
+
+# forecasting
+## time series data
+library(quantmod)
+from.dat <- as.Date("01/01/08", format = "%m/%d/%y")
+to.dat <- as.Date("12/31/13", format = "%m/%d/%y")
+getSymbols("GOOG", src = 'yahoo', from = from.dat, to = to.dat)
+head(GOOG)
+mGoog <- to.monthly(GOOG)
+googOpen <- Op(mGoog)
+ts1 <- ts(googOpen, frequency = 12)
+plot(ts1, xlab = "Years+1", ylab = "GOOG")
+plot(decompose(ts1) , xlab = "Years + 1")
+ts1Train <- window(ts1, start = 1, end = 5)
+ts1Test <- window(ts1, start = 5, end = (7 - 0.01))
+ts1Train
+plot(ts1Train)
+library(forecast)
+lines(ma(ts1Train, order = 3), col = 'red')
+ets1 <- ets(ts1Train, model = 'MMM')
+fcast <- forecast(ets1)
+plot(fcast)
+lines(ts1Test, col = 'red')
+accuracy(fcast, ts1Test)
+
+# unsupervised prediction
+data(iris)
+library(ggplot2)
+inTrain <- createDataPartition(y = iris$Species, p =.7, list = F)
+training <- iris[inTrain,]
+testing <- iris[-inTrain,]
+dim(training)
+dim(testing)
+kMeans1 <- kmeans(subset(training, select =  -c(Species)), centers = 3)
+training$clusters <- as.factor(kMeans1$cluster)
+qplot(Petal.Width, Petal.Length, colour = clusters, data = training)
+table(kMeans1$cluster, training$Species)
+modFit <- train(clusters ~ . , data = subset(training, select = -c(Species)), method = 'rpart')
+table(predict(modFit, training), training$Species)
+## apply on test set
+testClusterPred <- predict(modFit, testing)
+table(testClusterPred, testing$Species)
+?train
+
+# week 4 Q2
+library(caret)
+library(gbm)
+set.seed(3433)
+library(AppliedPredictiveModeling)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+
+set.seed(62433)
+modRF2 <- train(diagnosis ~ ., data=training, method="rf") #, trControl=trainControl("cv"), number=3)
+modBoost2 <- train(diagnosis ~ ., data=training, method="gbm", verbose=FALSE)
+modLDA2 <- train(diagnosis ~ ., data=training, method="lda", verbose=FALSE)
+
+predRF2 <- predict(modRF2, testing)
+predBoost2 <- predict(modBoost2, testing)
+predLDA2 <- predict(modLDA2, testing)
+
+dataCombined <- data.frame(predRF2, predBoost2, predLDA2, diagnosis=testing$diagnosis)
+modCombined <- train(diagnosis ~ ., data=dataCombined, method="rf", verbose=FALSE)
+
+predCombined <- predict(modCombined, dataCombined)
+
+cfmRF2 <- confusionMatrix(testing$diagnosis, predRF2)
+cfmBoost2 <- confusionMatrix(testing$diagnosis, predBoost2)
+cfmLDA2 <- confusionMatrix(testing$diagnosis, predLDA2)
+cfmCombined <- confusionMatrix(testing$diagnosis, predCombined)
+
+cfmRF2$overall["Accuracy"]
+cfmBoost2$overall["Accuracy"]
+cfmLDA2$overall["Accuracy"]
+cfmCombined$overall["Accuracy"]
+
+# Q3
+set.seed(3523)
+library(AppliedPredictiveModeling)
+library(elasticnet)
+data(concrete)
+inTrain = createDataPartition(concrete$CompressiveStrength, p = 3/4)[[1]]
+training = concrete[inTrain,]
+testing = concrete[-inTrain,]
+
+set.seed(233)
+lassomod <- train(CompressiveStrength ~ . , data = training, method = 'lasso')
+plot.enet(lassomod$finalModel,  xvar="penalty", use.color=TRUE)
+
+# Q4
+library(lubridate) # For year() function below
+
+dat = read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/gaData.csv")
+
+training = dat[year(dat$date) < 2012,]
+testing = dat[(year(dat$date)) > 2011,]
+tstrain = ts(training$visitsTumblr)
+
+tsmod <- bats(tstrain)
+forecastObj <- forecast(tsmod, level=95, h=nrow(testing))
+betweenVal <- sum(testing$visitsTumblr > forecastObj$lower &  testing$visitsTumblr < forecastObj$upper)
+betweenVal / nrow(testing) * 100
+
+# q5
+set.seed(3523)
+library(AppliedPredictiveModeling)
+data(concrete)
+inTrain = createDataPartition(concrete$CompressiveStrength, p = 3/4)[[1]]
+training = concrete[ inTrain,]
+testing = concrete[-inTrain,]
+set.seed(325)
+library('e1071')
+modSvm <- svm(CompressiveStrength ~ ., data = training)
+predSvm <- predict(modSvm, testing)
+accSvm <- accuracy(predSvm, testing$CompressiveStrength)
+data.frame(accSvm)["RMSE"]
