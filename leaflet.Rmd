@@ -1,17 +1,16 @@
 ---
 title: "Leaflet"
 output: html_document
+date: Apr 9, 2021
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Lecture Notes of Leaflet
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#### Beginning to show a Map in Leaflet
 
 ```{r, eval = FALSE}
 library(leaflet)
@@ -20,9 +19,9 @@ my_map <- leaflet() %>%
 my_map
 ```
 
-## Adding Markers
+#### Adding Markers
 
-```{r, echo=FALSE}
+```{r}
 library(leaflet)
 my_map <- leaflet()
 my_map <- addTiles(my_map)
@@ -31,7 +30,9 @@ my_map <- addMarkers(my_map,lat = 39.2980803, lng = -76.5898801,
 my_map
 ```
 
-```{r, echo=FALSE}
+#### Show Maltiple Points on a map
+
+```{r}
 library(leaflet)
 df <- data.frame(lat = runif(20, min = 39.2, max = 39.3),
                  lng = runif(20, min = -76.6, max = -76.5))
@@ -42,7 +43,9 @@ df
 
 ```
 
-```{r, echo=FALSE}
+#### Add Icons on A Map
+
+```{r}
 library(leaflet)
 hopkinsIcon <- makeIcon(
     iconUrl = "http://brand.jhu.edu./content/uploads/2014/06/university.shield.small_.blue_.png",
@@ -61,7 +64,9 @@ map = addMarkers(map, icon = hopkinsIcon)
 map
 ```
 
-```{r, echo=FALSE}
+#### Show Clusters on A Map
+
+```{r}
 library(leaflet)
 df <- data.frame(lat = runif(500, min = 39.25, max = 39.35),
                  lng = runif(500, min = -76.65, max = -76.55))
@@ -72,7 +77,9 @@ df
 
 ```
 
-```{r, echo=FALSE}
+#### Add Legened on A Map
+
+```{r}
 library(leaflet)
 df <- data.frame(lat = runif(20, min = 39.25, max = 39.35),
                  lng = runif(20, min = -76.65, max = -76.55),
@@ -86,7 +93,9 @@ df
 
 ```
 
-```{r, echo=FALSE}
+#### Show Population Scale on A Map
+
+```{r}
 library(leaflet)
 md_cities <- data.frame(name = c("Baltimore", "Frederick","Rockville", "Gaithersburg","Bowie","Hagerstown","Annapolis","College Park","Salisbury","Laurel"),
                         pop = c(619493,66169,62334,61045,55232,39890,38880,30587,30484,25346),
@@ -94,7 +103,6 @@ md_cities <- data.frame(name = c("Baltimore", "Frederick","Rockville", "Gaithers
                         lng = c(-76.6077852,-77.4204875,-77.1528,-77.2014,-76.7791,-77.7200,-76.4922,-76.9378,-75.5994,-76.8483))
 
 a = md_cities$pop
-md_cities <- addCircles(md_cities, weight = 1, radius = sqrt(a) * 30)
 md_cities <- leaflet(md_cities)
 md_cities <- addTiles(md_cities)
 md_cities <- addCircles(md_cities, weight = 1, radius = sqrt(a) * 30)
@@ -102,10 +110,13 @@ md_cities
 
 ```
 
-```{r, echo=FALSE}
+#### Create A Rectangles on A Map
+
+```{r}
 leaflet() %>%
   addTiles() %>%
   addRectangles(lat1 = 37.3858, lng1 = -122.0595,
                 lat2 = 37.3890, lng2 = -122.0625)
 
 ```
+
