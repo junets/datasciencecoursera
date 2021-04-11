@@ -1,0 +1,27 @@
+---
+title: "Plotly with mtcars"
+output: ioslides_presentation
+date: April 11, 2021
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include=FALSE}
+library(plotly)
+```
+
+## Scatter Plot with Colors w.r.t Cyl
+
+```{r, message=FALSE}
+plot_ly(mtcars, x = ~wt, y = ~mpg,  mode = "markers", color = ~as.factor(cyl))
+```
+
+## Scatter Plot with Colors w.r.t cyl And with Size w.r.t hp
+
+```{r, message=FALSE, warning=FALSE}
+plot_ly(mtcars, x = ~wt, y = ~mpg,  mode = "markers", color = ~as.factor(cyl), size = ~hp)
+```
+
+# Thank You!
